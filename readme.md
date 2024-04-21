@@ -3,6 +3,10 @@
 Private GPT using Langchain JS, Tensorflow and Ollama Model (Mistral)
 We can point different of the chat Model based on the requirements
 
+Prerequisites:
+
+`Ollama should be running on local`
+
 Install dependeices
 
 `$ yarn install`

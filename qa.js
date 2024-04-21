@@ -3,10 +3,15 @@ import { FaissStore } from "@langchain/community/vectorstores/faiss";
 import { TensorFlowEmbeddings } from '@langchain/community/embeddings/tensorflow';
 import { RetrievalQAChain } from 'langchain/chains';
 import '@tensorflow/tfjs-node';
+import readerline from 'readline';
 
+let chain;
+const reader = readerline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-export const ask = async () => {
-    
+const init = async () => {
     try{
         const ollama = new Ollama({
             baseUrl: 'http://localhost:11434',
@@ -20,19 +25,35 @@ export const ask = async () => {
 
         const vectorStore = await FaissStore.load('./data/vectorstores', new TensorFlowEmbeddings());
         console.log(vectorStore);
-        console.log(vectorStore); 
-        console.log("Vector Ids:", vectorStore.ids); // Check loading
-        console.log("Vectors:", vectorStore.vectors); // Check loading
-
-        const question = "who is the author?"; //question goes here. 
+        console.log('Vector store loaded')
+        console.log('Loading model...')
         const reteriver = vectorStore.asRetriever();
-        const chain = RetrievalQAChain.fromLLM(ollama, reteriver, {k: 1})
+        chain = RetrievalQAChain.fromLLM(ollama, reteriver, {
+            k: 1
+        })
+        console.log('Model loaded')
 
-        const answer = await chain.invoke({query: question});
-
-        console.log(answer);
     } catch (error) {
         console.log(error);
     }
 }
-ask();
+
+export const ask = async () => {
+    try{
+        reader.question('Ask a question: ', async (question) => {
+            const answer = await chain.invoke({query: question}, { maxConcurrency: 1 })
+
+            console.log(answer);
+            ask();
+        });
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export const main = async () => {
+    await init();
+    await ask();
+}
+
+main();
